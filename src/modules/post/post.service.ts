@@ -1,4 +1,8 @@
-import { PosStatus, Post } from "../../../generated/prisma/client";
+import {
+  CommentStatus,
+  PosStatus,
+  Post,
+} from "../../../generated/prisma/client";
 import { PostWhereInput } from "../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
 
@@ -50,7 +54,7 @@ const getAllPosts = async ({
         },
       ],
     });
-  } 
+  }
   if (tags?.length) {
     andCondition.push({
       tags: {
@@ -85,6 +89,11 @@ const getAllPosts = async ({
             [sortBy]: sortOrder,
           }
         : { createdAt: "desc" },
+    include: {
+      _count: {
+        select: { comments: true },
+      },
+    },
   });
   const total = await prisma.post.count({
     where: {
@@ -117,6 +126,34 @@ const getSinglePost = async (id: string) => {
     });
     const result = await tx.post.findUnique({
       where: { id },
+      include: {
+        comments: {
+          where: {
+            parentId: null,
+            status: CommentStatus.APPROVED,
+          },
+          orderBy: { createdAt: "desc" },
+          include: {
+            replies: {
+              where: {
+                status: CommentStatus.APPROVED,
+              },
+              orderBy: { createdAt: "asc" },
+              include: {
+                replies: {
+                  where: {
+                    status: CommentStatus.APPROVED,
+                  },
+                  orderBy: { createdAt: "asc" },
+                },
+              },
+            },
+          },
+        },
+        _count: {
+          select: { comments: true },
+        },
+      },
     });
     return result;
   });
