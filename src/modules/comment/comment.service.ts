@@ -22,6 +22,23 @@ const getCommentById = async (id: string) => {
   });
   return result;
 };
+const getCommentByAuthor = async (authorId: string) => {
+  return await prisma.comment.findMany({
+    where: {
+      authorId,
+    },
+    orderBy: { createdAt: "desc" },
+    include: {
+      post: {
+        select: {
+          id: true,
+          title: true,
+        },
+      },
+    },
+  });
+  console.log(authorId);
+};
 const createComment = async (payload: {
   content: string;
   authorId: string;
@@ -43,8 +60,32 @@ const createComment = async (payload: {
   }
   return await prisma.comment.create({ data: payload });
 };
+
+const deledeComment = async (commentId: string, authorId: string) => {
+  const commentData = await prisma.comment.findFirst({
+    where: {
+      id: commentId,
+      authorId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!commentData) {
+    throw new Error("Your Provided input is invalid");
+  }
+
+  return await prisma.comment.delete({
+    where: {
+      id: commentData.id,
+    },
+  });
+};
 export const commentServices = {
   getAllComments,
+  getCommentByAuthor,
   getCommentById,
+  deledeComment,
   createComment,
 };

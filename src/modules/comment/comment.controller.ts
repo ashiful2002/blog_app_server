@@ -24,6 +24,20 @@ const getCommentById = async (req: Request, res: Response) => {
     });
   }
 };
+const getCommentByAuthor = async (req: Request, res: Response) => {
+  try {
+    const { authorId } = req.params;
+    const comment = await commentServices.getCommentByAuthor(
+      authorId as string
+    );
+    res.status(200).json(comment);
+  } catch (error: any) {
+    res.status(400).json({
+      error: "Failed to get comment",
+      details: error.message,
+    });
+  }
+};
 const createComment = async (req: Request, res: Response) => {
   try {
     const user = req.user;
@@ -37,9 +51,26 @@ const createComment = async (req: Request, res: Response) => {
     });
   }
 };
-
+const deledeComment = async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+    const { commentId } = req.params;
+    const result = await commentServices.deledeComment(
+      commentId as string,
+      user?.id as string
+    );
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({
+      error: "Failed to create comment",
+      details: error.message,
+    });
+  }
+};
 export const commentController = {
   getAllComments,
   getCommentById,
   createComment,
+  getCommentByAuthor,
+  deledeComment,
 };
