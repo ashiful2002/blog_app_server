@@ -101,6 +101,7 @@ const getAllPosts = async ({
     },
   });
   return {
+    total: allPosts.length,
     data: allPosts,
     pagination: {
       total,
@@ -173,9 +174,108 @@ const createPost = async (
 
   return result;
 };
+const getMyPosts = async (authorId: string) => {
+  const total = await prisma.post.count({
+    where: { authorId },
+  });
+  // const total = await prisma.post.aggregate({
+  //   _count: {
+  //     id: true,
+  //   },
+  //   where: {
+  //     authorId,
+  //   },
+  // });
+
+  await prisma.user.findFirstOrThrow({
+    where: {
+      id: authorId,
+      status: "ACTIVE",
+    },
+    select: {
+      id: true,
+    },
+  });
+  const result = await prisma.post.findMany({
+    where: {
+      authorId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      _count: {
+        select: {
+          comments: true,
+        },
+      },
+    },
+  });
+  return { total: total, data: result };
+};
+
+// update user
+const updatePost = async (
+  postId: string,
+  data: Partial<Post>,
+  authorId: string,
+  isAdmin: boolean
+) => {
+  const postData = await prisma.post.findUniqueOrThrow({
+    where: {
+      id: postId,
+    },
+    select: {
+      id: true,
+      authorId: true,
+    },
+  });
+
+  if (!isAdmin && postData.authorId !== authorId) {
+    throw new Error("You are not the owner or creator of this post");
+  }
+  if (!isAdmin) {
+    delete data.isFeatured;
+  }
+  const result = await prisma.post.update({
+    where: {
+      id: postData.id,
+    },
+    data,
+  });
+
+  return { statut: "UPDATED SUCCESSFULLY", data: result };
+};
+
+const deletePost = async (
+  postId: string,
+  authorId: string,
+  isAdmin: boolean
+) => {
+  const postData = await prisma.post.findFirstOrThrow({
+    where: {
+      id: postId,
+    },
+    select: {
+      id: true,
+      authorId: true,
+    },
+  });
+  if (!isAdmin && postData.authorId !== authorId) {
+    throw new Error("You are not the owner or creator of this post");
+  }
+  return await prisma.post.delete({
+    where: {
+      id: postId,
+    },
+  });
+};
 
 export const postService = {
   createPost,
   getAllPosts,
   getSinglePost,
+  getMyPosts,
+  updatePost,
+  deletePost,
 };

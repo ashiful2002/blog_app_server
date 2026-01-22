@@ -111,9 +111,29 @@ const updateComment = async (
       id: commentId,
       authorId,
     },
-    data, 
+    data,
   });
 };
+
+const moderateComment = async (id: string, data: { status: CommentStatus }) => {
+  const existsComent = await prisma.comment.findFirstOrThrow({
+    where: {
+      id,
+    },
+    select: {
+      id: true,
+      status: true,
+    },
+  });
+  if (existsComent.status === data.status) {
+    throw new Error(`your provided status (${data.status}) is alread exists`);
+  }
+  return await prisma.comment.update({
+    where: { id },
+    data,
+  });
+};
+
 
 export const commentServices = {
   getAllComments,
@@ -122,4 +142,5 @@ export const commentServices = {
   deledeComment,
   createComment,
   updateComment,
+  moderateComment,
 };

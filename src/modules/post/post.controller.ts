@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { postService } from "./post.service";
 import { PosStatus } from "../../../generated/prisma/enums";
 import paginationSortingHelper from "../../helpers/paginationSortingHelper";
+import { UserRole } from "../../middlewares/auth";
 
 const getAllPosts = async (req: Request, res: Response) => {
   try {
@@ -87,8 +88,80 @@ const createPost = async (req: Request, res: Response) => {
   }
 };
 
+const getMyPosts = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new Error("Unauthorised access");
+    }
+    const result = await postService.getMyPosts(userId);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({
+      error: error,
+      details: error.message,
+    });
+  }
+};
+const updatePost = async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+    const { postId } = req.params;
+    const isAdmin = user?.role === UserRole.ADMIN;
+    if (!user) {
+      throw new Error("Unauthorised access");
+    }
+
+    const result = await postService.updatePost(
+      postId as string,
+      req.body,
+      user.id,
+      isAdmin
+    );
+    res.status(200).json(result);
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "comment update failed";
+    res.status(400).json({
+      error: errorMessage,
+      details: error.message,
+    });
+  }
+};
+const deletePost = async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+    const { postId } = req.params;
+    const isAdmin = user?.role === UserRole.ADMIN;
+    if (!user) {
+      throw new Error("Unauthorised access");
+    }
+
+    const result = await postService.deletePost(
+      postId as string,
+      user.id,
+      isAdmin
+    );
+    
+    res.status(200).json({
+      message: "post deleted successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "comment update failed";
+    res.status(400).json({
+      error: errorMessage,
+      details: error.message,
+    });
+  }
+};
+
 export const PostController = {
   createPost,
   getAllPosts,
   getSinglePost,
+  getMyPosts,
+  updatePost,
+  deletePost,
 };
