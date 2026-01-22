@@ -8,6 +8,8 @@ const router = express.Router();
  * 📌 Collection routes
  */
 router.get("/", PostController.getAllPosts);
+router.get("/stats", PostController.getStats);
+
 router.get(
   "/my-posts",
   auth(UserRole.ADMIN, UserRole.USER),

@@ -142,11 +142,25 @@ const deletePost = async (req: Request, res: Response) => {
       user.id,
       isAdmin
     );
-    
+
     res.status(200).json({
       message: "post deleted successfully",
       data: result,
     });
+  } catch (error: any) {
+    const errorMessage =
+      error instanceof Error ? error.message : "comment update failed";
+    res.status(400).json({
+      error: errorMessage,
+      details: error.message,
+    });
+  }
+};
+const getStats = async (req: Request, res: Response) => {
+  try {
+    const result = await postService.getStats();
+
+    res.status(200).json(result);
   } catch (error: any) {
     const errorMessage =
       error instanceof Error ? error.message : "comment update failed";
@@ -164,4 +178,5 @@ export const PostController = {
   getMyPosts,
   updatePost,
   deletePost,
+  getStats,
 };
