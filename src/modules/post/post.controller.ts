@@ -1,10 +1,10 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { postService } from "./post.service";
 import { PosStatus } from "../../../generated/prisma/enums";
 import paginationSortingHelper from "../../helpers/paginationSortingHelper";
 import { UserRole } from "../../middlewares/auth";
 
-const getAllPosts = async (req: Request, res: Response) => {
+const getAllPosts = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { search } = req.query;
     const searchStr = typeof search === "string" ? search : undefined;
@@ -40,16 +40,17 @@ const getAllPosts = async (req: Request, res: Response) => {
     });
 
     res.status(200).json(result);
-  } catch (error: any) {
-    res.status(400).json({
-      error: "Failed to get all posts",
-      details: error.message,
-    });
+  } catch (error) {
+    next(error);
   }
 };
 
 /// get single post
-const getSinglePost = async (req: Request, res: Response) => {
+const getSinglePost = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     if (!id) {
@@ -62,11 +63,8 @@ const getSinglePost = async (req: Request, res: Response) => {
       });
     }
     res.status(200).json(result);
-  } catch (error: any) {
-    res.status(400).json({
-      error: "Failed to fetch post",
-      details: error.message,
-    });
+  } catch (error) {
+    next(error);
   }
 };
 // create post
@@ -103,7 +101,7 @@ const getMyPosts = async (req: Request, res: Response) => {
     });
   }
 };
-const updatePost = async (req: Request, res: Response) => {
+const updatePost = async (req: Request, res: Response, next : NextFunction) => {
   try {
     const user = req.user;
     const { postId } = req.params;
@@ -119,13 +117,8 @@ const updatePost = async (req: Request, res: Response) => {
       isAdmin
     );
     res.status(200).json(result);
-  } catch (error: any) {
-    const errorMessage =
-      error instanceof Error ? error.message : "comment update failed";
-    res.status(400).json({
-      error: errorMessage,
-      details: error.message,
-    });
+  } catch (error) {
+    next(error)
   }
 };
 const deletePost = async (req: Request, res: Response) => {

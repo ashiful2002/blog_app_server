@@ -103,6 +103,7 @@ const getAllPosts = async ({
   });
   return {
     total: allPosts.length,
+    ok: true,
     data: allPosts,
     pagination: {
       total,
